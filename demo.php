@@ -8,6 +8,10 @@
 
 require_once 'passwordLib.php';
 
+
+/**
+ * Demo Code
+ */
 $pass = FALSE;
 $algo = FALSE;
 $salt = FALSE;
@@ -135,7 +139,7 @@ if (isset($_POST['password_get_info'])){
                 <dt>Set Salt</dt>
                 <dd><input type="text" id="salt" name="salt" placeholder="Use automatic salt" value="<?php echo $salt ?>"></dd>
                 <dt>Set Cost</dt>
-                <dd><input type="number" name="cost" id="cost" min="8" max="999999999" placeholder="Set Cost" value="<?php echo $cost ?>"></dd>
+                <dd><input type="number" name="cost" id="cost" min="4" max="999999999" placeholder="Set Cost" value="<?php echo $cost ?>"></dd>
                 <dt>&nbsp;</dt>
                 <dd><input type="submit" name="password_hash" value="password_hash($password, $algorithm, $options)">
             </dl>
@@ -179,7 +183,7 @@ if (isset($_POST['password_get_info'])){
                         <option value="<?php echo PASSWORD_SHA512 ?>" <?php echo $selectedSha512 ?>>SHA-512</option>
                     </select></dd>
                 <dt>Set Cost</dt>
-                <dd><input type="number" name="cost" id="cost" min="8" max="999999999" placeholder="Set Cost" value="<?php echo $cost ?>"></dd>
+                <dd><input type="number" name="cost" id="cost" min="4" max="999999999" placeholder="Set Cost" value="<?php echo $cost ?>"></dd>
                 <dt>&nbsp;</dt>
                 <dd><input type="submit" name="password_needs_rehash" value="password_hash($hash, $algorithm, $options)">
             </dl>

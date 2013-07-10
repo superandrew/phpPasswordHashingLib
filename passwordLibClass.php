@@ -6,11 +6,20 @@
  * 
  * See: http://php.net/password_hash and http://php.net/password_verify
  * 
- * @link https://github.com/Antnee/phpPasswordLib
+ * @link https://github.com/Antnee/phpPasswordHashingLib
  */
- 
- 
+
+
 namespace Antnee\PhpPasswordLib;
+
+if (!defined('PASSWORD_BCRYPT')) define('PASSWORD_BCRYPT', 1);
+
+// Note that SHA hashes are not implemented in password_hash() or password_verify() in PHP 5.5
+// and are not recommended for use. Recommend only the default BCrypt option
+if (!defined('PASSWORD_SHA256')) define('PASSWORD_SHA256', -1);
+if (!defined('PASSWORD_SHA512')) define('PASSWORD_SHA512', -2);
+
+if (!defined('PASSWORD_DEFAULT')) define('PASSWORD_DEFAULT', PASSWORD_BCRYPT);
 
 class PhpPasswordLib{
     
@@ -98,12 +107,14 @@ class PhpPasswordLib{
      * Generate Crypt Password
      * 
      * @param STRING $password The password to encode
-     * @param BOOL $debug If true will die and display time to calculate hash
+     * @param ARRAY $options Cost value, and Salt if required
+     * @param BOOL $debug If true will return time to calculate hash
      * @return STRING The encoded password
      */
-    public function generateCryptPassword($password, $salt = FALSE, $debug = FALSE){
+    public function generateCryptPassword($password, $options = array(), $debug = FALSE){
         $startTime  = microtime(TRUE);
-        $salt       = $this->cryptSalt($salt);
+        if (isset($options['cost'])) $this->setCost($options['cost']);
+        $salt       = $this->cryptSalt(@$options['salt']);
         $crypt      = crypt($password, $salt);
         $endTime    = microtime(TRUE);
         if ($debug){
@@ -122,7 +133,7 @@ class PhpPasswordLib{
      * @param STRING $salt Override random salt with predefined value
      * @return STRING
      */
-    public function cryptSalt($salt){
+    public function cryptSalt($salt=NULL){
         if (empty($salt)){
             for ($i = 0; $i<$this->addSaltChars; $i++){
                 $salt .= $this->saltCharRange[rand(0,(strlen($this->saltCharRange)-1))];
@@ -338,6 +349,6 @@ class PhpPasswordLib{
         
         $setting = $this->cryptSetting.$this->rounds;
         
-        return !(substr($hash, 0, strlen($setting)) === $setting);
+        return (substr($hash, 0, strlen($setting)) === $setting);
     }
 }
