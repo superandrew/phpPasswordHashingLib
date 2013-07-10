@@ -18,16 +18,19 @@ class PhpPasswordLib{
     CONST BLOWFISH_CRYPT_SETTING = '$2a$'; 
     CONST BLOWFISH_CRYPT_SETTING_ALT = '$2y$'; // Available from PHP 5.3.7
     CONST BLOWFISH_ROUNDS = 10;
+    CONST BLOWFISH_NAME = 'bcrypt';
     
     // Note that SHA hashes are not implemented in password_hash() or password_verify() in PHP 5.5
     // and are not recommended for use. Recommend only the default BCrypt option
     CONST SHA256_CHAR_RANGE = './0123456789ABCDEFGHIJKLMONPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
     CONST SHA256_CRYPT_SETTING = '$5$';
     CONST SHA256_ROUNDS = 5000;
+    CONST SHA256_NAME = 'sha256';
     
     CONST SHA512_CHAR_RANGE = './0123456789ABCDEFGHIJKLMONPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
     CONST SHA512_CRYPT_SETTING = '$6$';
     CONST SHA512_ROUNDS = 5000;
+    CONST SHA512_NAME = 'sha512';
     
     
     /**
@@ -36,6 +39,14 @@ class PhpPasswordLib{
      * @var INT
      */
     private $algorithm = PASSWORD_BCRYPT;
+    
+    
+    /**
+     * Name of the current algorithm
+     *
+     * @var STRING
+     */
+    private $algoName;
     
     
     /**
@@ -126,7 +137,7 @@ class PhpPasswordLib{
      * Set Crypt Setting
      * 
      * @param type $setting
-     * @return \Library_Crypt
+     * @return \Antnee\PhpPasswordLib\PhpPasswordLib
      */
     public function cryptSetting($setting){
         $this->cryptSetting = $setting;
@@ -138,7 +149,7 @@ class PhpPasswordLib{
      * Salt Character Count
      * 
      * @param INT $count Number of characters to set
-     * @return \Library_Crypt|boolean
+     * @return \Antnee\PhpPasswordLib\PhpPasswordLib|boolean
      */
     public function addSaltChars($count){
         if (is_int($count)){
@@ -154,7 +165,7 @@ class PhpPasswordLib{
      * Salt Character Range
      * 
      * @param STRING $chars
-     * @return \Library_Crypt|boolean
+     * @return \Antnee\PhpPasswordLib\PhpPasswordLib|boolean
      */
     public function saltCharRange($chars){
         if (is_string($chars)){
@@ -170,7 +181,7 @@ class PhpPasswordLib{
      * Set Crypt Algorithm
      * 
      * @param INT $algo
-     * @return \Library_Crypt
+     * @return \Antnee\PhpPasswordLib\PhpPasswordLib
      */
     public function setAlgorithm($algo=NULL){
         switch ($algo){
@@ -180,6 +191,7 @@ class PhpPasswordLib{
                 $this->setCost(self::SHA256_ROUNDS);
                 $this->addSaltChars(16);
                 $this->saltCharRange(self::SHA256_CHAR_RANGE);
+                $this->algoName = self::SHA256_NAME;
                 break;
             case PASSWORD_SHA512:
                 $this->algorithm = PASSWORD_SHA512;
@@ -187,6 +199,7 @@ class PhpPasswordLib{
                 $this->setCost(self::SHA512_ROUNDS);
                 $this->addSaltChars(16);
                 $this->saltCharRange(self::SHA512_CHAR_RANGE);
+                $this->algoName = self::SHA512_NAME;
                 break;
             case PASSWORD_BCRYPT:
             default:
@@ -200,6 +213,7 @@ class PhpPasswordLib{
                 $this->setCost(self::BLOWFISH_ROUNDS);
                 $this->addSaltChars(22);
                 $this->saltCharRange(self::BLOWFISH_CHAR_RANGE);
+                $this->algoName = self::BLOWFISH_NAME;
                 break;
         }
         return $this;
@@ -211,7 +225,7 @@ class PhpPasswordLib{
      * 
      * @todo implement
      * 
-     * @return \Library_Crypt
+     * @return \Antnee\PhpPasswordLib\PhpPasswordLib
      */
     public function setCost($rounds){
         switch ($this->algorithm){
@@ -269,6 +283,47 @@ class PhpPasswordLib{
     
     
     /**
+     * Get hash info
+     *
+     * @param STRING $hash
+     * @return ARRAY
+     */
+    public function getInfo($hash){
+        $params = explode("$", $hash);
+        if (count($params) < 4) return FALSE;
+        
+        switch ($params['1']){
+            case '2a':
+            case '2y':
+            case '2x':
+                $algo = PASSWORD_BCRYPT;
+                $algoName = self::BLOWFISH_NAME;
+                break;
+            case '5':
+                $algo = PASSWORD_SHA256;
+                $algoName = self::SHA256_NAME;
+                break;
+            case '6':
+                $algo = PASSWORD_SHA512;
+                $algoName = self::SHA512_NAME;
+                break;
+            default:
+                return FALSE;
+        }
+        
+        $cost = preg_replace("/[^0-9,.]/", "", $params['2']);
+        
+        return array(
+            'algo' => $algo,
+            'algoName' => $algoName,
+            'options' => array(
+                'cost' => $cost
+            ),
+        );
+    }
+    
+    
+    /**
      * Verify Crypt Setting
      * 
      * Checks that the hash provided is encrypted at the current settings or not,
@@ -277,8 +332,12 @@ class PhpPasswordLib{
      * @param STRING $hash
      * @return BOOL
      */
-    public function verifyCryptSetting($hash){
+    public function verifyCryptSetting($hash, $algo, $options=array()){
+        $this->setAlgorithm($algo);
+        if (isset($options['cost'])) $this->setCost($options['cost']);
+        
         $setting = $this->cryptSetting.$this->rounds;
-        return (substr($hash, 0, strlen($setting)) == $setting);
+        
+        return !(substr($hash, 0, strlen($setting)) === $setting);
     }
 }

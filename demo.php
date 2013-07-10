@@ -14,6 +14,8 @@ $salt = FALSE;
 $cost = 10;
 $hash = FALSE;
 $time = FALSE;
+$rehash = FALSE;
+$info = FALSE;
 
 $selectedDefault    = FALSE;
 $selectedBlowfish   = FALSE;
@@ -47,6 +49,8 @@ if (isset($_POST['password_hash'])){
     $time   = round($end - $start, 5);
 }
 
+
+
 if (isset($_POST['password_verify'])){
     // We're verifying
     $pass = $_POST['password'];
@@ -54,6 +58,37 @@ if (isset($_POST['password_verify'])){
     $verified = password_verify($pass, $hash)
         ? 'The hash matches the entered password'
         : 'The hash does not match the entered password';
+}
+
+
+
+if (isset($_POST['password_needs_rehash'])){
+    // We're checking for rehash requirement
+    $hash = $_POST['hash'];
+    $algo = $_POST['algo'];
+    $cost = $_POST['cost'];
+    
+    switch ($algo){
+        case PASSWORD_DEFAULT: $selectedDefault = 'selected'; break;
+        case PASSWORD_BCRYPT: $selectedBlowfish = 'selected'; break;
+        case PASSWORD_SHA256: $selectedSha256 = 'selected'; break;
+        case PASSWORD_SHA512: $selectedSha512 = 'selected'; break;
+    }
+    
+    $options = array();
+    
+    if (!empty($cost)) $options['cost'] = (int)$cost;
+    
+    $rehash = password_needs_rehash($hash, $algo, $options)
+        ? 'DOES'
+        : 'does NOT';
+}
+
+if (isset($_POST['password_get_info'])){
+    // We're getting password info
+    $hash = $_POST['hash'];
+    
+    $info = password_get_info($hash);
 }
 
 ?>
@@ -100,7 +135,7 @@ if (isset($_POST['password_verify'])){
                 <dt>Set Salt</dt>
                 <dd><input type="text" id="salt" name="salt" placeholder="Use automatic salt" value="<?php echo $salt ?>"></dd>
                 <dt>Set Cost</dt>
-                <dd><input type="number" name="cost" id="cost" min="10" max="999999999" placeholder="Set Cost" value="<?php echo $cost ?>"></dd>
+                <dd><input type="number" name="cost" id="cost" min="8" max="999999999" placeholder="Set Cost" value="<?php echo $cost ?>"></dd>
                 <dt>&nbsp;</dt>
                 <dd><input type="submit" name="password_hash" value="password_hash($password, $algorithm, $options)">
             </dl>
@@ -111,6 +146,8 @@ if (isset($_POST['password_verify'])){
                 <p> Took <?php echo $time ?> seconds to generate this hash</p>
             <?php endif ?>
         </form>
+        
+        
         
         <form action="" method="POST">
             <h2>password_verify() example</h2>
@@ -124,6 +161,45 @@ if (isset($_POST['password_verify'])){
             </dl>
             <?php if ($verified): ?>
                 <p style="clear:both;"><?php echo $verified ?></p>
+            <?php endif ?>
+        </form>
+        
+        
+        
+        <form action="" method="POST">
+            <h2>password_needs_rehash() example</h2>
+            <dl>
+                <dt>Enter hash</dt>
+                <dd><input type="text" id="password" name="hash" placeholder="Enter Password" value="<?php echo $hash ?>"></dd>
+                <dt>Select Algorithm</dt>
+                <dd><select name="algo" id="algo">
+                        <option value="<?php echo PASSWORD_DEFAULT ?>" <?php echo $selectedDefault ?>>Default</option>
+                        <option value="<?php echo PASSWORD_BCRYPT ?>" <?php echo $selectedBlowfish ?>>Blowfish</option>
+                        <option value="<?php echo PASSWORD_SHA256 ?>" <?php echo $selectedSha256 ?>>SHA-256</option>
+                        <option value="<?php echo PASSWORD_SHA512 ?>" <?php echo $selectedSha512 ?>>SHA-512</option>
+                    </select></dd>
+                <dt>Set Cost</dt>
+                <dd><input type="number" name="cost" id="cost" min="8" max="999999999" placeholder="Set Cost" value="<?php echo $cost ?>"></dd>
+                <dt>&nbsp;</dt>
+                <dd><input type="submit" name="password_needs_rehash" value="password_hash($hash, $algorithm, $options)">
+            </dl>
+            <?php if ($rehash !== FALSE): ?>
+                <p style="clear:both;">Your generated hash <?php echo $rehash ?> need to be rehashed</span></p>
+            <?php endif ?>
+        </form>
+        
+        
+        
+        <form action="" method="POST">
+            <h2>password_get_info() example</h2>
+            <dl>
+                <dt>Enter hash</dt>
+                <dd><input type="text" id="password" name="hash" placeholder="Enter Password" value="<?php echo $hash ?>"></dd>
+                <dt>&nbsp;</dt>
+                <dd><input type="submit" name="password_get_info" value="password_get_info($hash)">
+            </dl>
+            <?php if ($info !== FALSE): ?>
+                <pre style="clear:both;"><?php var_dump($info) ?></pre>
             <?php endif ?>
         </form>
 </body>
