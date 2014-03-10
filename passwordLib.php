@@ -39,7 +39,7 @@ if (!function_exists('password_needs_rehash')){
     }
 }
 
-if (!function_exists('password_get_indo')){
+if (!function_exists('password_get_info')){
     function password_get_info($hash){
         $crypt = NEW Antnee\PhpPasswordLib\PhpPasswordLib;
         return $crypt->getInfo($hash);
